@@ -26,6 +26,7 @@ link_directories(${PCL_LIBRARY_DIRS})
 
 add_library(vector_map
   src/lib/adas_reader.cpp
+  src/lib/point.cpp
 )
 target_link_libraries(vector_map ${catkin_LIBRARIES})
 
