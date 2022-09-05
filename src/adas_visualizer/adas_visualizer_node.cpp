@@ -7,12 +7,11 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "ADASVisualizer");
   ros::NodeHandle nh;
 
-  std::string point_csv(argv[1]);
+  std::string csv_path(argv[1]);
   
   ADASVisualizer adas_vis(nh);
 
-  adas_vis.readPointCSV(point_csv);
-  adas_vis.publishPoint();
+  adas_vis.readCSV(csv_path);
   adas_vis.run();
 
   return 0;

@@ -3,28 +3,21 @@
 ADASVisualizer::ADASVisualizer(ros::NodeHandle nh)
 {
   this->nh_ = nh;
-  this->marker_pub_ = nh_.advertise<visualization_msgs::Marker>("vector_map", 1, true);
+  this->point_pub_ = nh_.advertise<visualization_msgs::Marker>("points", 1, true);
+  this->line_pub_ = nh_.advertise<visualization_msgs::Marker>("lines", 1, true);
 }
 
-void ADASVisualizer::readPointCSV(const std::string& csv_name)
+void ADASVisualizer::readCSV(const std::string& path_name)
 {
-  if (!this->adas_reader_.readPointCSV(csv_name))
+  if (!this->adas_reader_.readCSV(path_name))
   {
     // Cannot read point CSV
     exit(1);
   }
-
-  this->is_point_ready_ = true;
 }
 
 void ADASVisualizer::publishPoint()
 {
-  if (!this->is_point_ready_)
-  {
-    std::cerr << "point is not ready" << std::endl;
-    return;
-  }
-
   visualization_msgs::Marker points_msg;
   points_msg.header.frame_id = "map";
   points_msg.header.stamp = ros::Time::now();
@@ -44,19 +37,58 @@ void ADASVisualizer::publishPoint()
     vector_map::ADASPoint p = this->adas_reader_.getPointByID(id);
 
     geometry_msgs::Point q;
-    q.x = p.x_;
-    q.y = p.y_;
-    q.z = p.h_;
+    q.x = p.x;
+    q.y = p.y;
+    q.z = p.h;
 
     points_msg.points.push_back(q);
   }
 
-  this->marker_pub_.publish(points_msg);
+  this->point_pub_.publish(points_msg);
   ROS_INFO("Published point markers");
+}
+
+void ADASVisualizer::publishLine()
+{
+  visualization_msgs::Marker line_msg;
+  line_msg.header.frame_id = "map";
+  line_msg.header.stamp = ros::Time::now();
+  line_msg.ns = "vector_map_line";
+  line_msg.action = visualization_msgs::Marker::ADD;
+  line_msg.id = 1;
+  line_msg.type = visualization_msgs::Marker::LINE_LIST;
+  line_msg.scale.x = 0.05;
+  line_msg.pose.orientation.w = 1.0;
+  line_msg.color.b = 1.0;
+  line_msg.color.a = 1.0;
+
+  for (int i = 0; i < this->adas_reader_.getLinesNum(); i++)
+  {
+    int id = this->adas_reader_.getLineID(i);
+    std::vector<vector_map::ADASPoint> point_vec = this->adas_reader_.getLinePointsByID(id);
+
+    geometry_msgs::Point p1, p2;
+    p1.x = point_vec[0].x;
+    p1.y = point_vec[0].y;
+    p1.z = point_vec[0].h;
+
+    p2.x = point_vec[1].x;
+    p2.y = point_vec[1].y;
+    p2.z = point_vec[1].h;
+
+    line_msg.points.push_back(p1);
+    line_msg.points.push_back(p2);
+  }
+
+  this->line_pub_.publish(line_msg);
+  ROS_INFO("Published line markers");
 }
 
 void ADASVisualizer::run()
 {
+  this->publishPoint();
+  this->publishLine();
+
   std::cout << "Spinning!" << std::endl;
   ros::spin();
   std::cout << "Finish!" << std::endl;

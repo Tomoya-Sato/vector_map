@@ -5,7 +5,7 @@
 #include <string>
 #include <sstream>
 
-std::vector<std::string> splitCSV(const std::string& str, const char& del)
+static std::vector<std::string> splitCSV(const std::string& str, const char& del)
 {
   std::vector<std::string> ret;
   std::istringstream i_stream(str);
